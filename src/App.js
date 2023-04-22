@@ -1,33 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
-  const [toDo, setToDo] = useState("");
-  const [toDos, setToDos] = useState([]);
-  const onChange = (event) => setToDo(event.target.value)
+  const [loading, setLoading] = useState(true);
+  const [coins, setCoins] = useState([]);
+  const [usd, setUsd] = useState();
+  const [coin, setCoin] = useState();
+  useEffect(() => {
+    fetch("https://api.coinpaprika.com/v1/tickers")
+      .then((response) => response.json())
+      .then((json) => {
+        setCoins(json);
+        setLoading(false);
+        setCoin(json[0].quotes.USD.price);
+      });
+  }, []);
+  const onChange = (event) => {
+    setCoin(event.target.value);
+  }
   const onSubmit = (event) => {
     event.preventDefault();
-    if(toDo === ""){
-      return;
-    }
-    setToDos(current => [toDo, ...current]);
-    setToDo("");
+    setUsd(event.target.value);
   }
   return (
     <div>
-      <h1>To Do List({toDos.length})</h1>
-      <form onSubmit={onSubmit}>
-        <input
-          onChange={onChange}
-          type="text"
-          placeholder="Write your to do..."
-          value={toDo}
-        />
-        <button>to add</button>
-      </form>
+      <h1>Coin Converter ({coins.length})</h1>
       <hr />
-      <ul>
-        {toDos.map((c, i) => <li key={i}>{c}</li>)}
-      </ul>
+      {loading ? (
+        <strong>Loading...</strong>
+      ) : (
+        <select onChange={onChange}>
+          {coins.map((coin) => (
+            <option value={coin.quotes.USD.price}>
+              {coin.name} {coin.symbol}: {coin.quotes.USD.price.toFixed(3)} USD
+            </option>
+          ))}
+        </select>
+      )}
+        <input type="number" placeholder="Write your USD" value={usd} onChange={onSubmit} />
+        <br />
+      <div>
+        {usd ? usd : 0} USD = {(usd/coin).toFixed(3) ? (usd/coin).toFixed(5) : 0} COIN
+      </div>
     </div>
   );
 }
